@@ -1,4 +1,4 @@
-from flask import Flask, render_template,request, redirect, url_for, session
+from flask import Flask, render_template,request, redirect, url_for, session, flash
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
@@ -55,6 +55,12 @@ def register():
         username = request.form['username']
         password = request.form['password']
 
+        
+        existing_user = User.query.filter_by(username=username).first()
+        if existing_user:
+            flash('An account with this username already exists. Please choose a different one.', 'error')
+            return render_template('register.html')  
+
         hashed_password = generate_password_hash(password)
 
         if image:
@@ -63,7 +69,7 @@ def register():
             image.save(image_path)
             db_image_path = f'uploads/{filename}'
         else:
-            db_image_path = ''  
+            db_image_path = ''
 
         new_user = User(
             image=db_image_path,
@@ -71,12 +77,12 @@ def register():
             birthday=birthday,
             address=address,
             username=username,
-            password=hashed_password  
+            password=hashed_password
         )
 
         db.session.add(new_user)
         db.session.commit()
-        
+
         return redirect(url_for('login'))
 
     return render_template('register.html')
